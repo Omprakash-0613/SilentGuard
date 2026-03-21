@@ -1,0 +1,112 @@
+.staff-alert {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  max-height: 400px;
+  overflow-y: auto;
+  backdrop-filter: blur(10px);
+}
+
+.staff-alert--empty {
+  text-align: center;
+  padding: 2rem 1.25rem;
+}
+
+.staff-alert__empty-text {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.staff-alert__empty-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.staff-alert__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+}
+
+.staff-alert__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.alert-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.alert-card--new {
+  animation: alert-flash 1s ease;
+  border-color: rgba(248, 113, 113, 0.5);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+@keyframes alert-flash {
+  0% { background: rgba(248, 113, 113, 0.25); transform: scale(1.02); }
+  100% { background: rgba(248, 113, 113, 0.08); transform: scale(1); }
+}
+
+.alert-card__icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(248, 113, 113, 0.1);
+  border-radius: 8px;
+}
+
+.alert-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.alert-card__class {
+  font-weight: 600;
+  color: #f87171;
+  font-size: 0.95rem;
+}
+
+.alert-card__confidence {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+}
+
+.alert-card__meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.alert-card__room {
+  font-weight: 500;
+}

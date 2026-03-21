@@ -1,0 +1,24 @@
+# Firebase credentials — NEVER commit
+serviceAccountKey.json
+dashboard/serviceAccountKey.json
+
+# Environment variables
+.env.local
+.env
+functions/.env
+
+# Dependencies
+node_modules/
+dashboard/venv/
+
+# Build output
+pwa/dist/
+pwa/.cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+
+dashboard/serviceAccountKey.json
+src/firebase/firebaseConfig.js
