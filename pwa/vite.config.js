@@ -36,9 +36,9 @@ export default defineConfig({
       },
 
       workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Don't precache the firebase messaging SW (it's registered separately)
         navigateFallbackDenylist: [/^\/firebase-messaging-sw\.js$/],
-
         // Runtime caching for YAMNet model files
         runtimeCaching: [
           {
