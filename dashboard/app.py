@@ -24,23 +24,17 @@ st.set_page_config(
 
 # Initialize Firebase Admin SDK (only once)
 if not firebase_admin._apps:
-    # Option 1: Service account JSON file
-    cred_path = os.environ.get(
-        "GOOGLE_APPLICATION_CREDENTIALS",
-        "serviceAccountKey.json"
-    )
-    try:
-        if os.path.exists(cred_path):
-            cred = credentials.Certificate(cred_path)
-            firebase_admin.initialize_app(cred)
-        else:
-            # Option 2: Default credentials (Cloud Run, GCE, etc.)
-            firebase_admin.initialize_app()
-    except Exception as e:
-        st.error(f"**Firebase Configuration Error:** Could not initialize Firebase Admin SDK. \n\n"
-                 f"If you are running locally, please place your Firebase service account key "
-                 f"at `{cred_path}` or set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable.\n\n"
-                 f"Error details: `{str(e)}`")
+    creds_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+    if creds_json:
+        import json
+        cred_dict = json.loads(creds_json)
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+    elif os.path.exists("serviceAccountKey.json"):
+        cred = credentials.Certificate("serviceAccountKey.json")
+        firebase_admin.initialize_app(cred)
+    else:
+        st.error("Firebase credentials not found!")
         st.stop()
 
 db = firestore.client()
