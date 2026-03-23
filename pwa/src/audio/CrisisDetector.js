@@ -19,7 +19,7 @@ const CRISIS_CLASSES = [
   'Female scream', 'Male shout',
 ];
 
-const CONFIDENCE_THRESHOLD = 0.25; // Lowered for demo purposes
+const CONFIDENCE_THRESHOLD = 0.60; // Minimum confidence for a prediction to be considered a crisis
 const COOLDOWN_MS = 5000; // 5 seconds between alerts
 
 export class CrisisDetector {
