@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import firebaseConfig, { VAPID_KEY } from './firebaseConfig';
+import { saveEventLocally, initOfflineSync } from './offlineQueue';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -40,21 +41,32 @@ function getDeviceId() {
  * Only metadata — NO audio data stored.
  */
 export async function logCrisisEvent(event) {
+  const eventData = {
+    className: event.className,
+    confidence: event.confidence,
+    roomId: event.roomId,
+    deviceId: getDeviceId(),
+    hotelId: 'default',
+    timestamp: serverTimestamp(),
+    localTimestamp: event.timestamp.toISOString(),
+  };
+
+  // If offline, save locally
+  if (!navigator.onLine) {
+    console.warn('FirebaseClient: offline — saving locally');
+    await saveEventLocally(eventData);
+    return null;
+  }
+
   try {
-    const docRef = await addDoc(collection(db, 'crisisEvents'), {
-      className: event.className,
-      confidence: event.confidence,
-      roomId: event.roomId,
-      deviceId: getDeviceId(),
-      hotelId: 'default',
-      timestamp: serverTimestamp(),
-      localTimestamp: event.timestamp.toISOString(),
-    });
+    const docRef = await addDoc(collection(db, 'crisisEvents'), eventData);
     console.log('FirebaseClient: crisis logged →', docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error('FirebaseClient: failed to log crisis', error);
-    throw error;
+    // Firestore failed — save locally as fallback
+    console.error('FirebaseClient: write failed — saving locally', error);
+    await saveEventLocally(eventData);
+    return null;
   }
 }
 
@@ -153,3 +165,11 @@ export function onCrisisAlert(callback, maxEvents = 20) {
 }
 
 export { app, db };
+
+// Initialize offline sync — auto-syncs when internet returns
+initOfflineSync(async (eventData) => {
+  await addDoc(collection(db, 'crisisEvents'), {
+    ...eventData,
+    timestamp: serverTimestamp(),
+  });
+});
