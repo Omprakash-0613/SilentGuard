@@ -18,7 +18,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
-import firebaseConfig, { VAPID_KEY } from './firebaseConfig';
+import firebaseConfig, { HOTEL_ID, VAPID_KEY } from './firebaseConfig';
 import { saveEventLocally, initOfflineSync } from '../offlineQueue';
 
 // Initialize Firebase
@@ -46,7 +46,7 @@ export async function logCrisisEvent(event) {
     confidence: event.confidence,
     roomId: event.roomId,
     deviceId: getDeviceId(),
-    hotelId: 'default',
+    hotelId: HOTEL_ID,
     timestamp: serverTimestamp(),
     localTimestamp: event.timestamp.toISOString(),
   };
@@ -113,6 +113,7 @@ export async function registerForPush() {
       await setDoc(doc(db, 'fcmTokens', token), {
         token,
         deviceId: getDeviceId(),
+        hotelId: HOTEL_ID,
         createdAt: serverTimestamp(),
         platform: navigator.userAgent,
       });

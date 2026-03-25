@@ -3,21 +3,14 @@
  * Service worker for Firebase Cloud Messaging background push notifications.
  * This file MUST be in the public/ folder (served at root /).
  *
- * ⚠️ Update the firebaseConfig below with your real project values.
+ * Firebase config is injected from Vite env vars at build time.
  */
 
 /* eslint-disable no-undef */
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
-firebase.initializeApp({
-  apiKey: 'AIzaSyDnP616_EV3OdvCorOInWZENXUg98kHciU',
-  authDomain: 'silentguard-0613.firebaseapp.com',
-  projectId: 'silentguard-0613',
-  storageBucket: 'silentguard-0613.firebasestorage.app',
-  messagingSenderId: '418153897136',
-  appId: '1:418153897136:web:6db38d7a3e285494cb2f75',
-});
+firebase.initializeApp(__FIREBASE_MESSAGING_SW_CONFIG__);
 
 const messaging = firebase.messaging();
 

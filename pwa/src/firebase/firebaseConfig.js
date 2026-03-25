@@ -19,5 +19,6 @@ const firebaseConfig = {
 // VAPID key for FCM web push
 // Get from: Firebase Console → Cloud Messaging → Web configuration → Key pair
 export const VAPID_KEY = import.meta.env.VITE_VAPID_KEY;
+export const HOTEL_ID = import.meta.env.VITE_HOTEL_ID || '';
 
 export default firebaseConfig;

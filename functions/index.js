@@ -15,6 +15,7 @@ initializeApp();
 
 const db = getFirestore();
 const messaging = getMessaging();
+const HOTEL_ID = process.env.HOTEL_ID || '';
 
 /**
  * Triggered when a new document is created in the crisisEvents collection.
@@ -29,6 +30,7 @@ exports.onCrisisEvent = onDocumentCreated('crisisEvents/{eventId}', async (event
 
   const data = snapshot.data();
   const { className, confidence, roomId, hotelId } = data;
+  const eventHotelId = hotelId || HOTEL_ID;
 
   logger.info(
     `🚨 Crisis event: ${className} (${(confidence * 100).toFixed(1)}%) in room ${roomId}`
@@ -42,7 +44,17 @@ exports.onCrisisEvent = onDocumentCreated('crisisEvents/{eventId}', async (event
     return;
   }
 
-  const tokens = tokensSnapshot.docs.map((doc) => doc.data().token);
+  const tokenDocs = tokensSnapshot.docs.filter((doc) => {
+    const tokenHotelId = doc.data().hotelId;
+    return !eventHotelId || !tokenHotelId || tokenHotelId === eventHotelId;
+  });
+
+  if (tokenDocs.length === 0) {
+    logger.warn(`No FCM tokens registered for hotel ${eventHotelId || '(unscoped)'}`);
+    return;
+  }
+
+  const tokens = tokenDocs.map((doc) => doc.data().token);
 
   // Build FCM notification payload
   const message = {
@@ -54,7 +66,7 @@ exports.onCrisisEvent = onDocumentCreated('crisisEvents/{eventId}', async (event
       className: className || '',
       confidence: String(confidence || 0),
       roomId: roomId || '',
-      hotelId: hotelId || 'default',
+      hotelId: eventHotelId,
       eventId: event.params.eventId,
       timestamp: new Date().toISOString(),
     },
@@ -108,7 +120,7 @@ exports.onCrisisEvent = onDocumentCreated('crisisEvents/{eventId}', async (event
       logger.info(`Removing ${tokensToRemove.length} stale FCM token(s)`);
       const batch = db.batch();
       for (const token of tokensToRemove) {
-        const tokenDoc = tokensSnapshot.docs.find(
+        const tokenDoc = tokenDocs.find(
           (doc) => doc.data().token === token
         );
         if (tokenDoc) {
