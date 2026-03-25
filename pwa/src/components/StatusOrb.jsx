@@ -9,11 +9,18 @@ export default function StatusOrb({ status, crisisClass }) {
   const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
-    if (status === 'crisis') {
-      setAnimating(true);
-      const timer = setTimeout(() => setAnimating(false), 3000);
-      return () => clearTimeout(timer);
+    if (status !== 'crisis') {
+      const resetTimer = setTimeout(() => setAnimating(false), 0);
+      return () => clearTimeout(resetTimer);
     }
+
+    const startTimer = setTimeout(() => setAnimating(true), 0);
+    const stopTimer = setTimeout(() => setAnimating(false), 3000);
+
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(stopTimer);
+    };
   }, [status, crisisClass]);
 
   const getColor = () => {

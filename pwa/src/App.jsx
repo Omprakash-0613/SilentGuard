@@ -51,6 +51,10 @@ function App() {
     loadModel();
   }, []);
 
+  const handleRoomChange = useCallback((nextRoomId) => {
+    setRoomId(nextRoomId);
+  }, []);
+
 
   // Subscribe to Firestore crisis events
   useEffect(() => {
@@ -144,7 +148,7 @@ function App() {
 
         <RoomSelector
           roomId={roomId}
-          onRoomChange={setRoomId}
+          onRoomChange={handleRoomChange}
           disabled={isListening}
         />
 

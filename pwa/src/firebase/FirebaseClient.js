@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import firebaseConfig, { VAPID_KEY } from './firebaseConfig';
-import { saveEventLocally, initOfflineSync } from './offlineQueue';
+import { saveEventLocally, initOfflineSync } from '../offlineQueue';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

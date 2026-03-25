@@ -80,8 +80,9 @@ export const syncPendingEvents = async (writeToFirestore) => {
   console.log(`[OfflineQueue] Syncing ${pending.length} pending events...`);
 
   for (const event of pending) {
+    const { id, savedAt: _savedAt, ...eventData } = event;
+
     try {
-      const { id, savedAt, ...eventData } = event;
       await writeToFirestore(eventData);
       await deleteEvent(id);
       console.log(`[OfflineQueue] Synced event ${id}`);

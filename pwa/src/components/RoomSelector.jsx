@@ -15,7 +15,7 @@ export default function RoomSelector({ roomId, onRoomChange, disabled }) {
     if (saved && !roomId) {
       onRoomChange(saved);
     }
-  }, []);
+  }, [onRoomChange, roomId]);
 
   const handleSelect = (room) => {
     onRoomChange(room);
