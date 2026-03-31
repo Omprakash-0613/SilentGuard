@@ -30,6 +30,7 @@ export class CrisisDetector {
     this._running = false;
     this._processing = false;
 
+    this._observations = {}; // Tracks hit timestamps per class for false positive mitigation
     // Cooldown tracking — per-class last alert time
     this._lastAlertTime = {};
 
@@ -81,6 +82,7 @@ export class CrisisDetector {
 
     this._roomId = roomId;
     this._lastAlertTime = {};
+    this._observations = {};
 
     // Ensure model is loaded
     if (!this._yamnet.isLoaded) {
@@ -124,7 +126,28 @@ export class CrisisDetector {
               continue;
             }
 
-            // CRISIS DETECTED
+            const now = Date.now();
+            if (!this._observations[pred.className]) {
+              this._observations[pred.className] = [];
+            }
+            this._observations[pred.className].push(now);
+
+            // Filter out observations older than 2500ms
+            this._observations[pred.className] = this._observations[pred.className].filter(
+              t => now - t <= 2500
+            );
+
+            // Require 2 hits within the 2.5-second window
+            if (this._observations[pred.className].length < 2) {
+              console.log(
+                `CrisisDetector: ${pred.className} pending verification (1/2) — waiting for sustained sound`
+              );
+              break;
+            }
+
+            // CRISIS DETECTED (Confirmed)
+            this._observations[pred.className] = []; // Reset after confirmation
+
             const event = {
               className: pred.className,
               confidence: pred.confidence,
@@ -132,11 +155,11 @@ export class CrisisDetector {
               roomId: this._roomId,
             };
 
-            this._lastAlertTime[pred.className] = Date.now();
+            this._lastAlertTime[pred.className] = now;
             this._emitStatus('crisis');
 
             console.log(
-              `CrisisDetector: 🚨 ALERT — ${pred.className} (${(pred.confidence * 100).toFixed(1)}%) in room ${this._roomId}`
+              `CrisisDetector: 🚨 ALERT APPROVED — ${pred.className} (${(pred.confidence * 100).toFixed(1)}%) in room ${this._roomId}`
             );
 
             if (this._onCrisisCallback) {

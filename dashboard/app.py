@@ -63,6 +63,39 @@ def get_crisis_events(limit=100):
 
 
 def main():
+    # --- Authentication Wall ---
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    if not st.session_state["authenticated"]:
+        st.markdown(
+            """
+            <div style="text-align: center; padding: 2rem 0;">
+                <h1>🛡️ SilentGuard Dashboard</h1>
+                <p style="color: #888;">Secure access is required to view real-time crisis events.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            pwd = st.text_input("Access Password", type="password")
+            if st.button("Login", use_container_width=True):
+                # We try to get from secrets, fallback to hardcoded default
+                try:
+                    expected_pwd = st.secrets.get("DASHBOARD_PASSWORD", "silentguard2026")
+                except FileNotFoundError:
+                    expected_pwd = "silentguard2026"
+                    
+                if pwd == expected_pwd:
+                    st.session_state["authenticated"] = True
+                    st.rerun()
+                else:
+                    st.error("Incorrect password.")
+        return
+    # ---------------------------
+
     # Header
     st.markdown(
         """

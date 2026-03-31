@@ -23,6 +23,45 @@ function App() {
   const [error, setError] = useState(null);
 
   const detectorRef = useRef(null);
+  const wakeLockRef = useRef(null);
+
+  const requestWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+        console.log('App: Screen Wake Lock activated');
+        wakeLockRef.current.addEventListener('release', () => {
+          console.log('App: Screen Wake Lock released');
+        });
+      }
+    } catch (err) {
+      console.warn('App: Wake Lock request failed or denied.', err);
+    }
+  };
+
+  const releaseWakeLock = () => {
+    if (wakeLockRef.current !== null) {
+      wakeLockRef.current.release().then(() => {
+        wakeLockRef.current = null;
+      }).catch((e) => console.warn('App: error releasing wake lock', e));
+    }
+  };
+
+  // Handle visibility changes for wake lock
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      // If we are currently monitoring and come back to the tab, we need to re-request the lock
+      // because OS automatically releases it when tab is hidden.
+      if (document.visibilityState === 'visible' && detectorRef.current?.isRunning) {
+        await requestWakeLock();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      releaseWakeLock();
+    };
+  }, []);
 
   // Initialize detector once
   useEffect(() => {
@@ -83,6 +122,7 @@ function App() {
       detector.stop();
       setStatus('ready');
       setLastCrisisClass(null);
+      releaseWakeLock();
     } else {
       if (!roomId) {
         setError('Please select a room before starting.');
@@ -118,6 +158,7 @@ function App() {
 
       try {
         await detector.start(roomId);
+        await requestWakeLock();
       } catch (err) {
         console.error('App: failed to start detection', err);
         setError('Failed to access microphone. Check permissions.');

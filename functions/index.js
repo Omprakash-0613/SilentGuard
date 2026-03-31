@@ -36,24 +36,20 @@ exports.onCrisisEvent = onDocumentCreated('crisisEvents/{eventId}', async (event
     `🚨 Crisis event: ${className} (${(confidence * 100).toFixed(1)}%) in room ${roomId}`
   );
 
-  // Get all registered FCM tokens
-  const tokensSnapshot = await db.collection('fcmTokens').get();
+  // Get registered FCM tokens for this hotel
+  let tokensSnapshot;
+  if (eventHotelId) {
+    tokensSnapshot = await db.collection('fcmTokens').where('hotelId', '==', eventHotelId).get();
+  } else {
+    tokensSnapshot = await db.collection('fcmTokens').get();
+  }
 
   if (tokensSnapshot.empty) {
     logger.warn('No FCM tokens registered — no push sent');
     return;
   }
 
-  const tokenDocs = tokensSnapshot.docs.filter((doc) => {
-    const tokenHotelId = doc.data().hotelId;
-    return !eventHotelId || !tokenHotelId || tokenHotelId === eventHotelId;
-  });
-
-  if (tokenDocs.length === 0) {
-    logger.warn(`No FCM tokens registered for hotel ${eventHotelId || '(unscoped)'}`);
-    return;
-  }
-
+  const tokenDocs = tokensSnapshot.docs;
   const tokens = tokenDocs.map((doc) => doc.data().token);
 
   // Build FCM notification payload
@@ -91,38 +87,48 @@ exports.onCrisisEvent = onDocumentCreated('crisisEvents/{eventId}', async (event
     },
   };
 
-  // Send to all registered devices
-  const response = await messaging.sendEachForMulticast({
-    tokens,
-    ...message,
-  });
+  // Send to all registered devices in chunks of 500
+  const CHUNK_SIZE = 500;
+  let successCount = 0;
+  let failureCount = 0;
+  const tokensToRemove = [];
+
+  for (let i = 0; i < tokens.length; i += CHUNK_SIZE) {
+    const tokensChunk = tokens.slice(i, i + CHUNK_SIZE);
+    const chunkMessage = { tokens: tokensChunk, ...message };
+    
+    const response = await messaging.sendEachForMulticast(chunkMessage);
+    successCount += response.successCount;
+    failureCount += response.failureCount;
+
+    // Clean up stale tokens
+    if (response.failureCount > 0) {
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const errorCode = resp.error?.code;
+          if (
+            errorCode === 'messaging/registration-token-not-registered' ||
+            errorCode === 'messaging/invalid-registration-token'
+          ) {
+            tokensToRemove.push(tokensChunk[idx]);
+          }
+        }
+      });
+    }
+  }
 
   logger.info(
-    `FCM sent: ${response.successCount} success, ${response.failureCount} failures`
+    `FCM sent: ${successCount} success, ${failureCount} failures`
   );
 
-  // Clean up stale tokens
-  if (response.failureCount > 0) {
-    const tokensToRemove = [];
-    response.responses.forEach((resp, idx) => {
-      if (!resp.success) {
-        const errorCode = resp.error?.code;
-        if (
-          errorCode === 'messaging/registration-token-not-registered' ||
-          errorCode === 'messaging/invalid-registration-token'
-        ) {
-          tokensToRemove.push(tokens[idx]);
-        }
-      }
-    });
-
-    if (tokensToRemove.length > 0) {
-      logger.info(`Removing ${tokensToRemove.length} stale FCM token(s)`);
+  if (tokensToRemove.length > 0) {
+    logger.info(`Removing ${tokensToRemove.length} stale FCM token(s)`);
+    // Delete in chunks of 500 (Firestore limit)
+    for (let i = 0; i < tokensToRemove.length; i += CHUNK_SIZE) {
       const batch = db.batch();
-      for (const token of tokensToRemove) {
-        const tokenDoc = tokenDocs.find(
-          (doc) => doc.data().token === token
-        );
+      const tokensChunk = tokensToRemove.slice(i, i + CHUNK_SIZE);
+      for (const token of tokensChunk) {
+        const tokenDoc = tokenDocs.find((doc) => doc.data().token === token);
         if (tokenDoc) {
           batch.delete(tokenDoc.ref);
         }
