@@ -3,7 +3,7 @@
 Passive audio crisis detection for hotels. No cameras. No recordings. Just AI listening for when someone needs help.
 
 **[▶ Watch Demo](https://drive.google.com/file/d/1fv-JDanrARnNk5s5C_TqKFOgRGnSvFI8/view?usp=sharing)** · 
-**[Live App](https://www.silentguard.tech/)**
+**[Live App](https://www.silentguard.tech/)**.
 **[Live Dashboard](https://silentguard-dashboard.onrender.com/)**
 ---
 Dashboard password - silentguard2026
